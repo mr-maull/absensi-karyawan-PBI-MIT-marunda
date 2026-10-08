@@ -97,7 +97,7 @@ Rina Amelia"
     style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit"></textarea>
 
   <div class="actions">
-    <button class="in" id="simpanDaftar">Simpan Daftar Karyawan</button>
+    <button type="button" id="simpanDaftar">Simpan Daftar Karyawan</button>
   </div>
   <p class="note" id="infoDaftar">Daftar karyawan belum disimpan.</p>
 </section>
@@ -156,48 +156,66 @@ function simpan(){
  localStorage.setItem(KEY,JSON.stringify(data));
  render();
 }
+
 function render(){
- const sekarang=tanggalKey(new Date());
- const hariIni=data.filter(r=>r.tanggalKey===sekarang);
- let total=0,lembur=0;
- hariIni.forEach(r=>{if(r.keluar){let h=durasi(r.masuk,r.keluar);total+=h;lembur+=Math.max(0,h-12)}});
- $("tanggal").textContent=hari(new Date())+", "+tanggal(new Date());
- $("orang").textContent=new Set(hariIni.map(r=>r.nama.toLowerCase())).size;
- $("total").textContent=formatJam(total);
- $("lembur").textContent=formatJam(lembur);
+  const sekarang = tanggalKey(new Date());
+  const hariIni = data.filter(r => r.tanggalKey === sekarang);
+  let total = 0, lembur = 0;
 
- const q=$("cari").value.trim().toLowerCase();
- const list=data.filter(r=>r.nama.toLowerCase().includes(q));
- $("daftar").replaceChildren();
- $("kosong").style.display=list.length?"none":"block";
-
- list.forEach(r=>{
-   const tr=document.createElement("tr");
-   const h=r.keluar?durasi(r.masuk,r.keluar):null;
-   const vals=[
-     r.nama,
-     hari(new Date(r.masuk))+", "+tanggal(new Date(r.masuk)),
-     jam(r.masuk),jam(r.keluar),
-     h===null?"—":formatJam(h),
-     h===null?"—":formatJam(Math.max(0,h-12)),
-     r.keluar?"Selesai":"Sedang bekerja"
-   ];
-   vals.forEach((v,i)=>{
-  const td=document.createElement("td");
-  td.textContent=v;
-
-  if(i===5) td.className="overtime";
-
-  if(i===6){
-    if(!r.keluar){
-      td.className="status-kuning";
-    } else {
-      td.className="status-hijau";
+  hariIni.forEach(r => {
+    if(r.keluar){
+      const h = durasi(r.masuk, r.keluar);
+      total += h;
+      lembur += Math.max(0, h - 12);
     }
-  }
+  });
 
-  tr.appendChild(td);
-});
+  $("tanggal").textContent =
+    hari(new Date()) + ", " + tanggal(new Date());
+
+  $("orang").textContent =
+    new Set(hariIni.map(r => r.nama.toLowerCase())).size;
+
+  $("total").textContent = formatJam(total);
+  $("lembur").textContent = formatJam(lembur);
+
+  const q = $("cari").value.trim().toLowerCase();
+  const list = data.filter(r => r.nama.toLowerCase().includes(q));
+
+  $("daftar").replaceChildren();
+  $("kosong").style.display = list.length ? "none" : "block";
+
+  list.forEach(r => {
+    const tr = document.createElement("tr");
+    const h = r.keluar ? durasi(r.masuk, r.keluar) : null;
+
+    const vals = [
+      r.nama,
+      hari(new Date(r.masuk)) + ", " + tanggal(new Date(r.masuk)),
+      jam(r.masuk),
+      jam(r.keluar),
+      h === null ? "—" : formatJam(h),
+      h === null ? "—" : formatJam(Math.max(0, h - 12)),
+      r.keluar ? "Selesai" : "Sedang bekerja"
+    ];
+
+    vals.forEach((v, i) => {
+      const td = document.createElement("td");
+      td.textContent = v;
+
+      if(i === 5) td.className = "overtime";
+
+      if(i === 6){
+        td.className = r.keluar
+          ? "status-hijau"
+          : "status-kuning";
+      }
+
+      tr.appendChild(td);
+    });
+
+    $("daftar").appendChild(tr);
+  });
 }
 $("masuk").onclick=()=>{
  const n=$("nama").value.trim();
@@ -351,7 +369,7 @@ if(daftarTersimpan.length){
   $("infoDaftar").textContent =
     daftarTersimpan.length + " karyawan tersimpan.";
 }
-
+  
 const renderAwal = render;
 render = function(){
   renderAwal();
