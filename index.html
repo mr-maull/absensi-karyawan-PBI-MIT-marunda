@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Absensi Karyawan PBI-MIT Marunda</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f9;color:#183047;font-family:Arial,sans-serif}
+header{background:#123452;color:white;padding:24px 18px}
+header h1{font-size:23px;margin:0 0 6px}
+header p{margin:0;color:#c9deed}
+main{max-width:1000px;margin:24px auto;padding:0 15px}
+.card{background:white;border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 3px 12px #1234520c}
+h2{font-size:19px;margin:0 0 15px}
+label{display:block;font-size:14px;font-weight:bold;margin:12px 0 6px}
+input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px}
+button{border:0;border-radius:8px;padding:12px 16px;font-weight:bold;cursor:pointer}
+.actions{display:flex;gap:10px;margin-top:15px}
+.actions button{flex:1}
+.in{background:#11866f;color:white}
+.out{background:#123452;color:white}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#f1f6fa;padding:15px;border-radius:10px}
+.stat span{font-size:12px;color:#61778a}
+.stat strong{display:block;font-size:22px;margin-top:7px}
+.note{font-size:13px;color:#64748b;line-height:1.6}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tools input{flex:1;min-width:160px}
+.tools button{background:#e3edf5;color:#183047}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:700px;background:white}
+th,td{text-align:left;padding:12px;border-bottom:1px solid #e2e8f0;font-size:13px}
+th{background:#edf3f8}
+.overtime{color:#b76b0b;font-weight:bold}
+.status{font-size:13px;color:#526b7d;margin-top:12px}
+@media(max-width:500px){header h1{font-size:20px}.card{padding:15px}.stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:span 2}.actions{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+<h1>Absensi Karyawan PBI-MIT Marunda</h1>
+<p>Sistem pencatatan kehadiran dan jam kerja</p>
+</header>
+<main>
+<section class="card">
+<h2>Check-in / Check-out</h2>
+<label for="nama">Nama karyawan</label>
+<input id="nama" placeholder="Masukkan nama karyawan">
+<label for="bagian">Bagian / shift (opsional)</label>
+<input id="bagian" placeholder="Contoh: Inbound / Shift 1">
+<div class="actions">
+<button class="in" id="masuk">✓ CHECK-IN</button>
+<button class="out" id="keluar">CHECK-OUT</button>
+</div>
+<div class="status" id="pesan">Masukkan nama sebelum melakukan absensi.</div>
+</section>
+
+<section class="card">
+<h2>Ringkasan hari ini</h2>
+<div id="tanggal"></div>
+<div class="stats" style="margin-top:14px">
+<div class="stat"><span>Karyawan</span><strong id="orang">0</strong></div>
+<div class="stat"><span>Total jam kerja</span><strong id="total">0j 00m</strong></div>
+<div class="stat"><span>Total lembur</span><strong id="lembur">0j 00m</strong></div>
+</div>
+<p class="note">Rumus lembur: total jam kerja dikurangi 12 jam. Jika total kerja kurang dari 12 jam, lembur dihitung 0. Lembur final muncul setelah check-out.</p>
+</section>
+
+<section class="card">
+<h2>Riwayat absensi</h2>
+<div class="tools">
+<input id="cari" placeholder="Cari nama karyawan...">
+<button id="unduh">Ekspor CSV</button>
+</div>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Nama</th><th>Hari / Tanggal</th><th>Check-in</th><th>Check-out</th><th>Total jam</th><th>Lembur</th><th>Status</th></tr></thead>
+<tbody id="daftar"></tbody>
+</table>
+</div>
+<p id="kosong" class="note">Belum ada data absensi.</p>
+</section>
+
+<section class="card">
+<h2>Informasi</h2>
+<p class="note">Waktu mengikuti jam perangkat. Data versi ini tersimpan di browser yang digunakan. Agar seluruh karyawan dapat melihat data yang sama dari HP dan komputer berbeda, aplikasi harus dihubungkan ke database online.</p>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const KEY="pbi_mit_marunda_absensi";
+let data=[];
+try{data=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){data=[]}
+
+const pad=n=>String(n).padStart(2,"0");
+const hari=d=>new Intl.DateTimeFormat("id-ID",{weekday:"long"}).format(d);
+const tanggal=d=>new Intl.DateTimeFormat("id-ID",{day:"2-digit",month:"long",year:"numeric"}).format(d);
+const jam=iso=>iso?new Intl.DateTimeFormat("id-ID",{hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(iso)):"—";
+const tanggalKey=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const durasi=(a,b)=>Math.max(0,(new Date(b)-new Date(a))/3600000);
+const formatJam=n=>{let m=Math.round(n*60);return Math.floor(m/60)+"j "+pad(m%60)+"m"};
+const namaAktif=n=>data.find(r=>r.nama.toLowerCase()===n.toLowerCase()&&!r.keluar);
+
+function simpan(){
+ localStorage.setItem(KEY,JSON.stringify(data));
+ render();
+}
+function render(){
+ const sekarang=tanggalKey(new Date());
+ const hariIni=data.filter(r=>r.tanggalKey===sekarang);
+ let total=0,lembur=0;
+ hariIni.forEach(r=>{if(r.keluar){let h=durasi(r.masuk,r.keluar);total+=h;lembur+=Math.max(0,h-12)}});
+ $("tanggal").textContent=hari(new Date())+", "+tanggal(new Date());
+ $("orang").textContent=new Set(hariIni.map(r=>r.nama.toLowerCase())).size;
+ $("total").textContent=formatJam(total);
+ $("lembur").textContent=formatJam(lembur);
+
+ const q=$("cari").value.trim().toLowerCase();
+ const list=data.filter(r=>r.nama.toLowerCase().includes(q));
+ $("daftar").replaceChildren();
+ $("kosong").style.display=list.length?"none":"block";
+
+ list.forEach(r=>{
+   const tr=document.createElement("tr");
+   const h=r.keluar?durasi(r.masuk,r.keluar):null;
+   const vals=[
+     r.nama,
+     hari(new Date(r.masuk))+", "+tanggal(new Date(r.masuk)),
+     jam(r.masuk),jam(r.keluar),
+     h===null?"—":formatJam(h),
+     h===null?"—":formatJam(Math.max(0,h-12)),
+     r.keluar?"Selesai":"Sedang bekerja"
+   ];
+   vals.forEach((v,i)=>{
+     const td=document.createElement("td");
+     td.textContent=v;
+     if(i===5)td.className="overtime";
+     tr.appendChild(td);
+   });
+   $("daftar").appendChild(tr);
+ });
+}
+$("masuk").onclick=()=>{
+ const n=$("nama").value.trim();
+ if(!n){alert("Masukkan nama karyawan.");return}
+ if(namaAktif(n)){alert("Karyawan ini sudah check-in dan belum check-out.");return}
+ const now=new Date();
+ data.unshift({nama:n,bagian:$("bagian").value.trim(),masuk:now.toISOString(),keluar:null,tanggalKey:tanggalKey(now)});
+ simpan();
+ $("pesan").textContent="Check-in berhasil pukul "+jam(now.toISOString())+".";
+};
+$("keluar").onclick=()=>{
+ const n=$("nama").value.trim();
+ if(!n){alert("Masukkan nama karyawan.");return}
+ const r=namaAktif(n);
+ if(!r){alert("Tidak ada check-in aktif untuk nama ini.");return}
+ const now=new Date();
+ if(now<new Date(r.masuk)){alert("Waktu check-out tidak valid.");return}
+ r.keluar=now.toISOString();
+ simpan();
+ const h=durasi(r.masuk,r.keluar);
+ $("pesan").textContent="Check-out berhasil. Total kerja "+formatJam(h)+", lembur "+formatJam(Math.max(0,h-12))+".";
+};
+$("cari").addEventListener("input",render);
+$("unduh").onclick=()=>{
+ if(!data.length){alert("Belum ada data.");return}
+ const rows=[["Nama","Bagian","Hari","Tanggal","Check-in","Check-out","Total Jam","Lembur","Status"]];
+ data.forEach(r=>{
+   const h=r.keluar?durasi(r.masuk,r.keluar):null;
+   rows.push([r.nama,r.bagian,hari(new Date(r.masuk)),tanggal(new Date(r.masuk)),jam(r.masuk),jam(r.keluar),h===null?"":formatJam(h),h===null?"":formatJam(Math.max(0,h-12)),r.keluar?"Selesai":"Sedang bekerja"]);
+ });
+ const csv=rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+ const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download="absensi-pbi-mit-marunda.csv";a.click();URL.revokeObjectURL(url);
+};
+render();
+</script>
+</body>
+</html>
