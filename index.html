@@ -36,6 +36,23 @@ th{background:#edf3f8}
 .overtime{color:#b76b0b;font-weight:bold}
 .status{font-size:13px;color:#526b7d;margin-top:12px}
 @media(max-width:500px){header h1{font-size:20px}.card{padding:15px}.stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:span 2}.actions{flex-direction:column}}
+
+/* Warna status absensi */
+.status-merah {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+  font-weight: bold;
+}
+.status-kuning {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  font-weight: bold;
+}
+.status-hijau {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  font-weight: bold;
+}
 </style>
 </head>
 <body>
@@ -68,6 +85,35 @@ th{background:#edf3f8}
 <p class="note">Rumus lembur: total jam kerja dikurangi 12 jam. Jika total kerja kurang dari 12 jam, lembur dihitung 0. Lembur final muncul setelah check-out.</p>
 </section>
 
+<section class="card">
+  <h2>Daftar Karyawan</h2>
+  <p class="note">Masukkan nama seluruh karyawan, satu nama per baris. Daftar ini digunakan untuk memeriksa siapa yang belum absen.</p>
+
+  <label for="daftarNama">Nama seluruh karyawan</label>
+  <textarea id="daftarNama" rows="6" placeholder="Contoh:
+Budi Santoso
+Andi Saputra
+Rina Amelia"
+    style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit"></textarea>
+
+  <div class="actions">
+    <button class="in" id="simpanDaftar">Simpan Daftar Karyawan</button>
+  </div>
+  <p class="note" id="infoDaftar">Daftar karyawan belum disimpan.</p>
+</section>
+
+<section class="card">
+  <h2>Status Kehadiran Hari Ini</h2>
+  <p class="note">Merah = belum check-in, kuning = masih bekerja, hijau = sudah check-out.</p>
+  <div class="tablewrap">
+    <table style="min-width:400px">
+      <thead>
+        <tr><th>Nama Karyawan</th><th>Status Hari Ini</th></tr>
+      </thead>
+      <tbody id="statusHarian"></tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
 <h2>Riwayat absensi</h2>
 
@@ -137,13 +183,21 @@ function render(){
      r.keluar?"Selesai":"Sedang bekerja"
    ];
    vals.forEach((v,i)=>{
-     const td=document.createElement("td");
-     td.textContent=v;
-     if(i===5)td.className="overtime";
-     tr.appendChild(td);
-   });
-   $("daftar").appendChild(tr);
- });
+  const td=document.createElement("td");
+  td.textContent=v;
+
+  if(i===5) td.className="overtime";
+
+  if(i===6){
+    if(!r.keluar){
+      td.className="status-kuning";
+    } else {
+      td.className="status-hijau";
+    }
+  }
+
+  tr.appendChild(td);
+});
 }
 $("masuk").onclick=()=>{
  const n=$("nama").value.trim();
@@ -209,6 +263,100 @@ $("hapusKadaluarsa").onclick=()=>{
   alert(kadaluarsa.length+" catatan absensi berhasil dihapus.");
 };
 
+const KEY_DAFTAR = "pbi_mit_daftar_karyawan";
+
+function bacaDaftarKaryawan(){
+  try {
+    const list = JSON.parse(localStorage.getItem(KEY_DAFTAR) || "[]");
+    return Array.isArray(list) ? list : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function simpanDaftarKaryawan(){
+  const nama = $("daftarNama").value
+    .split("\n")
+    .map(n => n.trim())
+    .filter(Boolean);
+
+  const unik = [...new Map(
+    nama.map(n => [n.toLocaleLowerCase("id-ID"), n])
+  ).values()];
+
+  if(!unik.length){
+    alert("Masukkan setidaknya satu nama karyawan.");
+    return;
+  }
+
+  localStorage.setItem(KEY_DAFTAR, JSON.stringify(unik));
+  $("infoDaftar").textContent =
+    unik.length + " karyawan tersimpan.";
+  renderStatusHarian();
+}
+
+function renderStatusHarian(){
+  const tbody = $("statusHarian");
+  tbody.replaceChildren();
+
+  const daftar = bacaDaftarKaryawan();
+  const today = tanggalKey(new Date());
+
+  if(!daftar.length){
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 2;
+    td.textContent = "Belum ada daftar karyawan.";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  daftar.forEach(nama => {
+    const r = data.find(x =>
+      x.tanggalKey === today &&
+      x.nama.toLocaleLowerCase("id-ID") ===
+        nama.toLocaleLowerCase("id-ID")
+    );
+
+    let status = "BELUM ABSEN";
+    let kelas = "status-merah";
+
+    if(r && !r.keluar){
+      status = "BELUM CHECK-OUT";
+      kelas = "status-kuning";
+    } else if(r && r.keluar){
+      status = "SUDAH ABSEN";
+      kelas = "status-hijau";
+    }
+
+    const tr = document.createElement("tr");
+    const tdNama = document.createElement("td");
+    const tdStatus = document.createElement("td");
+
+    tdNama.textContent = nama;
+    tdStatus.textContent = status;
+    tdStatus.className = kelas;
+
+    tr.append(tdNama, tdStatus);
+    tbody.appendChild(tr);
+  });
+}
+
+$("simpanDaftar").onclick = simpanDaftarKaryawan;
+
+const daftarTersimpan = bacaDaftarKaryawan();
+$("daftarNama").value = daftarTersimpan.join("\n");
+if(daftarTersimpan.length){
+  $("infoDaftar").textContent =
+    daftarTersimpan.length + " karyawan tersimpan.";
+}
+
+const renderAwal = render;
+render = function(){
+  renderAwal();
+  renderStatusHarian();
+};
 render();
 </script>
 </body>
