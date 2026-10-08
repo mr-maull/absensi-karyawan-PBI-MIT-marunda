@@ -114,7 +114,49 @@ Rina Amelia"
     </table>
   </div>
 </section>
+
 <section class="card">
+  <h2>Rekap Lembur Mingguan per Karyawan</h2>
+  <p class="note">
+    Pilih salah satu tanggal untuk melihat rekap dari Senin sampai Minggu.
+    Lembur dihitung dari total jam kerja setiap shift dikurangi 12 jam.
+  </p>
+
+  <label for="mingguTanggal">Pilih tanggal dalam minggu</label>
+  <input type="date" id="mingguTanggal">
+
+  <p id="periodeMinggu" class="note"></p>
+
+  <div class="tools">
+    <input id="cariRekap" placeholder="Cari nama karyawan...">
+    <button type="button" id="unduhRekap">Ekspor Rekap Mingguan CSV</button>
+  </div>
+
+  <div class="tablewrap">
+    <table style="min-width:1100px">
+      <thead>
+        <tr>
+          <th>Nama Karyawan</th>
+          <th>Senin</th>
+          <th>Selasa</th>
+          <th>Rabu</th>
+          <th>Kamis</th>
+          <th>Jumat</th>
+          <th>Sabtu</th>
+          <th>Minggu</th>
+          <th>Total Jam Kerja</th>
+          <th>Total Lembur</th>
+        </tr>
+      </thead>
+      <tbody id="rekapMingguan"></tbody>
+    </table>
+  </div>
+  <p class="note">
+    Lembur harian hanya dihitung setelah karyawan melakukan check-out.
+    Rekap menggunakan tanggal check-in setiap shift.
+  </p>
+</section>
+  <section class="card">
 <h2>Riwayat absensi</h2>
 
 <div class="tools">
@@ -361,6 +403,159 @@ function renderStatusHarian(){
   });
 }
 
+  
+function renderRekapMingguan(){
+  const inputTanggal = $("mingguTanggal");
+  const tbody = $("rekapMingguan");
+  if(!inputTanggal || !tbody) return;
+
+  if(!inputTanggal.value){
+    const sekarang = new Date();
+    inputTanggal.value =
+      sekarang.getFullYear() + "-" +
+      pad(sekarang.getMonth()+1) + "-" +
+      pad(sekarang.getDate());
+  }
+
+  const tanggalDipilih =
+    new Date(inputTanggal.value + "T12:00:00");
+
+  if(Number.isNaN(tanggalDipilih.getTime())) return;
+
+  const senin = new Date(tanggalDipilih);
+  senin.setDate(
+    senin.getDate() - ((senin.getDay()+6)%7)
+  );
+
+  const minggu = new Date(senin);
+  minggu.setDate(minggu.getDate()+6);
+
+  const keyMulai = tanggalKey(senin);
+  const keyAkhir = tanggalKey(minggu);
+
+  $("periodeMinggu").textContent =
+    "Periode: " + tanggal(senin) +
+    " sampai " + tanggal(minggu);
+
+  const daftarNama = bacaDaftarKaryawan();
+  const semuaNama = [
+    ...new Map(
+      [...daftarNama, ...data.map(r => r.nama)]
+        .map(n => [n.toLocaleLowerCase("id-ID"), n])
+    ).values()
+  ];
+
+  const pencarian = $("cariRekap").value
+    .trim().toLocaleLowerCase("id-ID");
+
+  const namaTampil = semuaNama.filter(n =>
+    n.toLocaleLowerCase("id-ID").includes(pencarian)
+  );
+
+  tbody.replaceChildren();
+
+  if(!namaTampil.length){
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 10;
+    td.textContent = "Belum ada data karyawan.";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  namaTampil.forEach(nama => {
+    const rekapHari = Array(7).fill(0);
+    let totalKerja = 0;
+
+    data.forEach(r => {
+      if(
+        r.nama.toLocaleLowerCase("id-ID") !==
+          nama.toLocaleLowerCase("id-ID") ||
+        r.tanggalKey < keyMulai ||
+        r.tanggalKey > keyAkhir ||
+        !r.keluar
+      ) return;
+
+      const waktuMasuk = new Date(r.masuk);
+      const indeksHari = (waktuMasuk.getDay()+6)%7;
+      const jamKerja = durasi(r.masuk, r.keluar);
+      const jamLembur = Math.max(0, jamKerja-12);
+
+      rekapHari[indeksHari] += jamLembur;
+      totalKerja += jamKerja;
+    });
+
+    const totalLembur = rekapHari.reduce(
+      (jumlah, jam) => jumlah + jam, 0
+    );
+
+    const tr = document.createElement("tr");
+
+    const nilai = [
+      nama,
+      ...rekapHari.map(formatJam),
+      formatJam(totalKerja),
+      formatJam(totalLembur)
+    ];
+
+    nilai.forEach((teks, indeks) => {
+      const td = document.createElement("td");
+      td.textContent = teks;
+
+      if(indeks === 9){
+        td.className = "overtime";
+      }
+
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+
+$("mingguTanggal").addEventListener(
+  "change", renderRekapMingguan
+);
+
+$("cariRekap").addEventListener(
+  "input", renderRekapMingguan
+);
+
+$("unduhRekap").onclick = () => {
+  const tabel = $("rekapMingguan");
+  if(!tabel.rows.length){
+    alert("Tidak ada data rekap untuk diekspor.");
+    return;
+  }
+
+  const header = [
+    "Nama Karyawan", "Senin", "Selasa", "Rabu",
+    "Kamis", "Jumat", "Sabtu", "Minggu",
+    "Total Jam Kerja", "Total Lembur"
+  ];
+
+  const rows = [header];
+
+  [...tabel.rows].forEach(tr => {
+    rows.push([...tr.cells].map(td => td.textContent));
+  });
+
+  const csv = rows.map(row =>
+    row.map(v => '"' + v.replace(/"/g, '""') + '"').join(",")
+  ).join("\r\n");
+
+  const blob = new Blob(["\ufeff" + csv], {
+    type: "text/csv;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "rekap-lembur-mingguan.csv";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 $("simpanDaftar").onclick = simpanDaftarKaryawan;
 
 const daftarTersimpan = bacaDaftarKaryawan();
@@ -369,11 +564,12 @@ if(daftarTersimpan.length){
   $("infoDaftar").textContent =
     daftarTersimpan.length + " karyawan tersimpan.";
 }
-  
+
 const renderAwal = render;
 render = function(){
   renderAwal();
   renderStatusHarian();
+  renderRekapMingguan();
 };
 render();
 </script>
