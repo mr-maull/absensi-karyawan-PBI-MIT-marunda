@@ -8,570 +8,616 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f1f5f9;color:#183047;font-family:Arial,sans-serif}
-header{background:#123452;color:white;padding:24px 18px}
-header h1{font-size:23px;margin:0 0 6px}
+header{background:#123452;color:white;padding:22px 18px}
+header h1{font-size:22px;margin:0 0 6px}
 header p{margin:0;color:#c9deed}
-main{max-width:1000px;margin:24px auto;padding:0 15px}
-.card{background:white;border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 3px 12px #1234520c}
-h2{font-size:19px;margin:0 0 15px}
+main{max-width:1100px;margin:22px auto;padding:0 14px}
+.card{background:white;border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 3px 12px #1234520c}
+h2{font-size:19px;margin:0 0 14px}
 label{display:block;font-size:14px;font-weight:bold;margin:12px 0 6px}
 input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px}
-button{border:0;border-radius:8px;padding:12px 16px;font-weight:bold;cursor:pointer}
-.actions{display:flex;gap:10px;margin-top:15px}
-.actions button{flex:1}
+button{border:0;border-radius:8px;padding:12px 15px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.primary{background:#123452;color:white}
 .in{background:#11866f;color:white}
 .out{background:#123452;color:white}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.stat{background:#f1f6fa;padding:15px;border-radius:10px}
-.stat span{font-size:12px;color:#61778a}
-.stat strong{display:block;font-size:22px;margin-top:7px}
-.note{font-size:13px;color:#64748b;line-height:1.6}
-.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.tools input{flex:1;min-width:160px}
+.danger{background:#fee2e2;color:#991b1b}
+.actions,.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.actions button{flex:1}
+.tools input{flex:1;min-width:170px}
 .tools button{background:#e3edf5;color:#183047}
+.note{font-size:13px;color:#64748b;line-height:1.6}
+.status{font-size:13px;color:#526b7d;margin-top:12px;white-space:pre-wrap}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.stat{background:#f1f6fa;padding:14px;border-radius:10px}
+.stat span{font-size:12px;color:#61778a}
+.stat strong{display:block;font-size:21px;margin-top:7px}
 .tablewrap{overflow-x:auto}
-table{border-collapse:collapse;width:100%;min-width:700px;background:white}
-th,td{text-align:left;padding:12px;border-bottom:1px solid #e2e8f0;font-size:13px}
+table{border-collapse:collapse;width:100%;min-width:680px;background:white}
+th,td{text-align:left;padding:11px;border-bottom:1px solid #e2e8f0;font-size:13px}
 th{background:#edf3f8}
 .overtime{color:#b76b0b;font-weight:bold}
-.status{font-size:13px;color:#526b7d;margin-top:12px}
-@media(max-width:500px){header h1{font-size:20px}.card{padding:15px}.stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:span 2}.actions{flex-direction:column}}
-
-/* Warna status absensi */
-.status-merah {
-  background: #fee2e2 !important;
-  color: #991b1b !important;
-  font-weight: bold;
-}
-.status-kuning {
-  background: #fef3c7 !important;
-  color: #92400e !important;
-  font-weight: bold;
-}
-.status-hijau {
-  background: #dcfce7 !important;
-  color: #166534 !important;
-  font-weight: bold;
+.status-merah{background:#fee2e2;color:#991b1b;font-weight:bold}
+.status-kuning{background:#fef3c7;color:#92400e;font-weight:bold}
+.status-hijau{background:#dcfce7;color:#166534;font-weight:bold}
+.hidden{display:none!important}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+@media(max-width:500px){
+ header h1{font-size:19px}.card{padding:14px}
+ .stats{grid-template-columns:1fr 1fr}
+ .stat:last-child{grid-column:span 2}
+ .actions{flex-direction:column}
 }
 </style>
 </head>
 <body>
 <header>
-<h1>Absensi Karyawan PBI-MIT Marunda</h1>
-<p>Sistem pencatatan kehadiran dan jam kerja</p>
+  <h1>Absensi Karyawan PBI-MIT Marunda</h1>
+  <p>Sistem pencatatan kehadiran dan jam kerja online</p>
 </header>
+
 <main>
-<section class="card">
-<h2>Check-in / Check-out</h2>
-<label for="nama">Nama karyawan</label>
-<input id="nama" placeholder="Masukkan nama karyawan">
-<label for="bagian">Bagian / shift (opsional)</label>
-<input id="bagian" placeholder="Contoh: Inbound / Shift 1">
-<div class="actions">
-<button class="in" id="masuk">✓ CHECK-IN</button>
-<button class="out" id="keluar">CHECK-OUT</button>
-</div>
-<div class="status" id="pesan">Masukkan nama sebelum melakukan absensi.</div>
-</section>
+  <section class="card" id="loginCard">
+    <h2>Login Absensi</h2>
+    <p class="note">Masuk menggunakan akun yang sudah didaftarkan admin.</p>
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="password">Kata sandi</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <div class="actions">
+        <button class="primary" id="loginButton" type="submit">LOGIN</button>
+      </div>
+    </form>
+    <p id="loginMessage" class="status"></p>
+  </section>
 
-<section class="card">
-<h2>Ringkasan hari ini</h2>
-<div id="tanggal"></div>
-<div class="stats" style="margin-top:14px">
-<div class="stat"><span>Karyawan</span><strong id="orang">0</strong></div>
-<div class="stat"><span>Total jam kerja</span><strong id="total">0j 00m</strong></div>
-<div class="stat"><span>Total lembur</span><strong id="lembur">0j 00m</strong></div>
-</div>
-<p class="note">Rumus lembur: total jam kerja dikurangi 12 jam. Jika total kerja kurang dari 12 jam, lembur dihitung 0. Lembur final muncul setelah check-out.</p>
-</section>
+  <section id="appArea" class="hidden">
+    <section class="card">
+      <div class="topline">
+        <div>
+          <h2 id="welcome">Absensi</h2>
+          <p class="note" id="roleInfo"></p>
+        </div>
+        <button class="danger" id="logoutButton" type="button">LOGOUT</button>
+      </div>
+      <p class="status" id="message"></p>
+    </section>
 
-<section class="card">
-  <h2>Daftar Karyawan</h2>
-  <p class="note">Masukkan nama seluruh karyawan, satu nama per baris. Daftar ini digunakan untuk memeriksa siapa yang belum absen.</p>
+    <section class="card" id="employeeCheckin">
+      <h2>Check-in / Check-out</h2>
+      <label for="bagian">Bagian / shift</label>
+      <input id="bagian" placeholder="Contoh: Inbound / Shift 1">
+      <div class="actions">
+        <button class="in" id="checkinButton" type="button">✓ CHECK-IN</button>
+        <button class="out" id="checkoutButton" type="button">CHECK-OUT</button>
+      </div>
+      <p class="note">Waktu dicatat berdasarkan waktu perangkat. Pastikan jam perangkat benar.</p>
+    </section>
 
-  <label for="daftarNama">Nama seluruh karyawan</label>
-  <textarea id="daftarNama" rows="6" placeholder="Contoh:
-Budi Santoso
-Andi Saputra
-Rina Amelia"
-    style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit"></textarea>
+    <section class="card">
+      <h2>Ringkasan Hari Ini</h2>
+      <div id="todayDate"></div>
+      <div class="stats">
+        <div class="stat"><span>Karyawan hadir</span><strong id="peopleCount">0</strong></div>
+        <div class="stat"><span>Total jam kerja selesai</span><strong id="workTotal">0j 00m</strong></div>
+        <div class="stat"><span>Total lembur selesai</span><strong id="overtimeTotal">0j 00m</strong></div>
+      </div>
+      <p class="note">Lembur per shift = jam kerja dikurangi 12 jam, minimum 0. Hasil final dihitung setelah check-out.</p>
+    </section>
 
-  <div class="actions">
-    <button type="button" id="simpanDaftar">Simpan Daftar Karyawan</button>
-  </div>
-  <p class="note" id="infoDaftar">Daftar karyawan belum disimpan.</p>
-</section>
+    <section class="card hidden" id="employeeListCard">
+      <h2>Daftar Karyawan dan Status Kehadiran</h2>
+      <div class="tablewrap">
+        <table style="min-width:420px">
+          <thead><tr><th>Nama Karyawan</th><th>Status Hari Ini</th></tr></thead>
+          <tbody id="employeeStatusTable"></tbody>
+        </table>
+      </div>
+      <p class="note">Merah = belum absen; kuning = belum check-out; hijau = sudah check-out.</p>
+      <p class="note">Penambahan akun karyawan dilakukan melalui Firebase Authentication dan collection employees.</p>
+    </section>
 
-<section class="card">
-  <h2>Status Kehadiran Hari Ini</h2>
-  <p class="note">Merah = belum check-in, kuning = masih bekerja, hijau = sudah check-out.</p>
-  <div class="tablewrap">
-    <table style="min-width:400px">
-      <thead>
-        <tr><th>Nama Karyawan</th><th>Status Hari Ini</th></tr>
-      </thead>
-      <tbody id="statusHarian"></tbody>
-    </table>
-  </div>
-</section>
+    <section class="card hidden" id="weeklyCard">
+      <h2>Rekap Lembur Mingguan</h2>
+      <label for="weekDate">Pilih tanggal dalam minggu</label>
+      <input type="date" id="weekDate">
+      <p class="note" id="weekPeriod"></p>
+      <div class="tools">
+        <input id="searchWeekly" placeholder="Cari nama karyawan...">
+        <button id="exportWeekly" type="button">Ekspor Rekap Mingguan CSV</button>
+      </div>
+      <div class="tablewrap">
+        <table style="min-width:1050px">
+          <thead><tr>
+            <th>Nama</th><th>Senin</th><th>Selasa</th><th>Rabu</th>
+            <th>Kamis</th><th>Jumat</th><th>Sabtu</th><th>Minggu</th>
+            <th>Total Jam Kerja</th><th>Total Lembur</th>
+          </tr></thead>
+          <tbody id="weeklyTable"></tbody>
+        </table>
+      </div>
+      <p class="note">Rekap seluruh karyawan hanya ditampilkan untuk akun admin.</p>
+    </section>
 
-<section class="card">
-  <h2>Rekap Lembur Mingguan per Karyawan</h2>
-  <p class="note">
-    Pilih salah satu tanggal untuk melihat rekap dari Senin sampai Minggu.
-    Lembur dihitung dari total jam kerja setiap shift dikurangi 12 jam.
-  </p>
-
-  <label for="mingguTanggal">Pilih tanggal dalam minggu</label>
-  <input type="date" id="mingguTanggal">
-
-  <p id="periodeMinggu" class="note"></p>
-
-  <div class="tools">
-    <input id="cariRekap" placeholder="Cari nama karyawan...">
-    <button type="button" id="unduhRekap">Ekspor Rekap Mingguan CSV</button>
-  </div>
-
-  <div class="tablewrap">
-    <table style="min-width:1100px">
-      <thead>
-        <tr>
-          <th>Nama Karyawan</th>
-          <th>Senin</th>
-          <th>Selasa</th>
-          <th>Rabu</th>
-          <th>Kamis</th>
-          <th>Jumat</th>
-          <th>Sabtu</th>
-          <th>Minggu</th>
-          <th>Total Jam Kerja</th>
-          <th>Total Lembur</th>
-        </tr>
-      </thead>
-      <tbody id="rekapMingguan"></tbody>
-    </table>
-  </div>
-  <p class="note">
-    Lembur harian hanya dihitung setelah karyawan melakukan check-out.
-    Rekap menggunakan tanggal check-in setiap shift.
-  </p>
-</section>
-  <section class="card">
-<h2>Riwayat absensi</h2>
-
-<div class="tools">
-<input id="cari" placeholder="Cari nama karyawan...">
-<button id="unduh">Ekspor CSV</button>
-<button id="hapusKadaluarsa" style="background:#fee2e2;color:#991b1b">Hapus Data > 1 Bulan</button>
-</div>
-<div class="tablewrap">
-<table>
-<thead><tr><th>Nama</th><th>Hari / Tanggal</th><th>Check-in</th><th>Check-out</th><th>Total jam</th><th>Lembur</th><th>Status</th></tr></thead>
-<tbody id="daftar"></tbody>
-</table>
-</div>
-<p id="kosong" class="note">Belum ada data absensi.</p>
-</section>
-
-<section class="card">
-<h2>Informasi</h2>
-<p class="note">Waktu mengikuti jam perangkat. Data versi ini tersimpan di browser yang digunakan. Agar seluruh karyawan dapat melihat data yang sama dari HP dan komputer berbeda, aplikasi harus dihubungkan ke database online.</p>
-</section>
+    <section class="card">
+      <h2>Riwayat Absensi</h2>
+      <div class="tools">
+        <input id="searchHistory" placeholder="Cari nama karyawan...">
+        <button id="exportHistory" type="button">Ekspor Riwayat CSV</button>
+        <button class="danger hidden" id="deleteOldButton" type="button">Hapus Data &gt; 1 Bulan</button>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th>Nama</th><th>Hari / Tanggal</th><th>Check-in</th>
+            <th>Check-out</th><th>Total Jam</th><th>Lembur</th><th>Status</th>
+          </tr></thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+      <p id="historyEmpty" class="note">Belum ada data absensi.</p>
+    </section>
+  </section>
 </main>
 
-<script>
-const $=id=>document.getElementById(id);
-const KEY="pbi_mit_marunda_absensi";
-let data=[];
-try{data=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){data=[]}
+<script type="module">
+import { initializeApp } from
+  "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {
+  getFirestore, collection, doc, getDoc, getDocs, addDoc,
+  updateDoc, deleteDoc, query, where
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-const pad=n=>String(n).padStart(2,"0");
-const hari=d=>new Intl.DateTimeFormat("id-ID",{weekday:"long"}).format(d);
-const tanggal=d=>new Intl.DateTimeFormat("id-ID",{day:"2-digit",month:"long",year:"numeric"}).format(d);
-const jam=iso=>iso?new Intl.DateTimeFormat("id-ID",{hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(iso)):"—";
-const tanggalKey=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
-const durasi=(a,b)=>Math.max(0,(new Date(b)-new Date(a))/3600000);
-const formatJam=n=>{let m=Math.round(n*60);return Math.floor(m/60)+"j "+pad(m%60)+"m"};
-const namaAktif=n=>data.find(r=>r.nama.toLowerCase()===n.toLowerCase()&&!r.keluar);
-
-function simpan(){
- localStorage.setItem(KEY,JSON.stringify(data));
- render();
-}
-
-function render(){
-  const sekarang = tanggalKey(new Date());
-  const hariIni = data.filter(r => r.tanggalKey === sekarang);
-  let total = 0, lembur = 0;
-
-  hariIni.forEach(r => {
-    if(r.keluar){
-      const h = durasi(r.masuk, r.keluar);
-      total += h;
-      lembur += Math.max(0, h - 12);
-    }
-  });
-
-  $("tanggal").textContent =
-    hari(new Date()) + ", " + tanggal(new Date());
-
-  $("orang").textContent =
-    new Set(hariIni.map(r => r.nama.toLowerCase())).size;
-
-  $("total").textContent = formatJam(total);
-  $("lembur").textContent = formatJam(lembur);
-
-  const q = $("cari").value.trim().toLowerCase();
-  const list = data.filter(r => r.nama.toLowerCase().includes(q));
-
-  $("daftar").replaceChildren();
-  $("kosong").style.display = list.length ? "none" : "block";
-
-  list.forEach(r => {
-    const tr = document.createElement("tr");
-    const h = r.keluar ? durasi(r.masuk, r.keluar) : null;
-
-    const vals = [
-      r.nama,
-      hari(new Date(r.masuk)) + ", " + tanggal(new Date(r.masuk)),
-      jam(r.masuk),
-      jam(r.keluar),
-      h === null ? "—" : formatJam(h),
-      h === null ? "—" : formatJam(Math.max(0, h - 12)),
-      r.keluar ? "Selesai" : "Sedang bekerja"
-    ];
-
-    vals.forEach((v, i) => {
-      const td = document.createElement("td");
-      td.textContent = v;
-
-      if(i === 5) td.className = "overtime";
-
-      if(i === 6){
-        td.className = r.keluar
-          ? "status-hijau"
-          : "status-kuning";
-      }
-
-      tr.appendChild(td);
-    });
-
-    $("daftar").appendChild(tr);
-  });
-}
-$("masuk").onclick=()=>{
- const n=$("nama").value.trim();
- if(!n){alert("Masukkan nama karyawan.");return}
- if(namaAktif(n)){alert("Karyawan ini sudah check-in dan belum check-out.");return}
- const now=new Date();
- data.unshift({nama:n,bagian:$("bagian").value.trim(),masuk:now.toISOString(),keluar:null,tanggalKey:tanggalKey(now)});
- simpan();
- $("pesan").textContent="Check-in berhasil pukul "+jam(now.toISOString())+".";
-};
-$("keluar").onclick=()=>{
- const n=$("nama").value.trim();
- if(!n){alert("Masukkan nama karyawan.");return}
- const r=namaAktif(n);
- if(!r){alert("Tidak ada check-in aktif untuk nama ini.");return}
- const now=new Date();
- if(now<new Date(r.masuk)){alert("Waktu check-out tidak valid.");return}
- r.keluar=now.toISOString();
- simpan();
- const h=durasi(r.masuk,r.keluar);
- $("pesan").textContent="Check-out berhasil. Total kerja "+formatJam(h)+", lembur "+formatJam(Math.max(0,h-12))+".";
-};
-$("cari").addEventListener("input",render);
-$("unduh").onclick=()=>{
- if(!data.length){alert("Belum ada data.");return}
- const rows=[["Nama","Bagian","Hari","Tanggal","Check-in","Check-out","Total Jam","Lembur","Status"]];
- data.forEach(r=>{
-   const h=r.keluar?durasi(r.masuk,r.keluar):null;
-   rows.push([r.nama,r.bagian,hari(new Date(r.masuk)),tanggal(new Date(r.masuk)),jam(r.masuk),jam(r.keluar),h===null?"":formatJam(h),h===null?"":formatJam(Math.max(0,h-12)),r.keluar?"Selesai":"Sedang bekerja"]);
- });
- const csv=rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n");
- const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
- const url=URL.createObjectURL(blob),a=document.createElement("a");
- a.href=url;a.download="absensi-pbi-mit-marunda.csv";a.click();URL.revokeObjectURL(url);
+const firebaseConfig = {
+  apiKey: "AIzaSyBY8z6Gmm9LZ83e-yHzb9CsbgnYLb6oJ0o",
+  authDomain: "absensi-pbi-mit-marunda.firebaseapp.com",
+  projectId: "absensi-pbi-mit-marunda",
+  storageBucket: "absensi-pbi-mit-marunda.firebasestorage.app",
+  messagingSenderId: "690007934171",
+  appId: "1:690007934171:web:954181c3d4cc4592cf38fe",
+  measurementId: "G-HWK3ZJ6ZK5"
 };
 
-$("hapusKadaluarsa").onclick=()=>{
-  const sekarang=new Date();
-  const batas=new Date(sekarang);
-  batas.setMonth(batas.getMonth()-1);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const $ = id => document.getElementById(id);
 
-  const kadaluarsa=data.filter(r=>
-    new Date(r.masuk)<batas
-  );
+let currentUser = null;
+let role = null;
+let profile = null;
+let attendance = [];
+let employees = [];
+let busy = false;
 
-  if(kadaluarsa.length===0){
-    alert("Tidak ada data yang lebih lama dari 1 bulan.");
-    return;
-  }
-
-  const yakin=confirm(
-    "Ditemukan "+kadaluarsa.length+
-    " catatan absensi berumur lebih dari 1 bulan.\n\n"+
-    "Hapus data tersebut secara permanen?"
-  );
-
-  if(!yakin)return;
-
-  data=data.filter(r=>new Date(r.masuk)>=batas);
-  localStorage.setItem(KEY,JSON.stringify(data));
-  render();
-
-  alert(kadaluarsa.length+" catatan absensi berhasil dihapus.");
+const pad = n => String(n).padStart(2, "0");
+const dateKey = d =>
+  d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
+const dayName = d =>
+  new Intl.DateTimeFormat("id-ID", {weekday:"long"}).format(d);
+const dateText = d =>
+  new Intl.DateTimeFormat("id-ID", {
+    day:"2-digit", month:"long", year:"numeric"
+  }).format(d);
+const timeText = iso => iso
+  ? new Intl.DateTimeFormat("id-ID", {
+      hour:"2-digit", minute:"2-digit", hour12:false
+    }).format(new Date(iso))
+  : "—";
+const hoursBetween = (a,b) =>
+  Math.max(0, (new Date(b)-new Date(a))/3600000);
+const formatHours = n => {
+  const m = Math.round(n*60);
+  return Math.floor(m/60) + "j " + pad(m%60) + "m";
 };
+const overtimeOf = r => r.keluar
+  ? Math.max(0, hoursBetween(r.masuk,r.keluar)-12)
+  : 0;
+const escapeCSV = v => '"' + String(v ?? "").replace(/"/g,'""') + '"';
 
-const KEY_DAFTAR = "pbi_mit_daftar_karyawan";
-
-function bacaDaftarKaryawan(){
-  try {
-    const list = JSON.parse(localStorage.getItem(KEY_DAFTAR) || "[]");
-    return Array.isArray(list) ? list : [];
-  } catch(e) {
-    return [];
-  }
+function say(text, target="message"){
+  $(target).textContent = text;
 }
-
-function simpanDaftarKaryawan(){
-  const nama = $("daftarNama").value
-    .split("\n")
-    .map(n => n.trim())
-    .filter(Boolean);
-
-  const unik = [...new Map(
-    nama.map(n => [n.toLocaleLowerCase("id-ID"), n])
-  ).values()];
-
-  if(!unik.length){
-    alert("Masukkan setidaknya satu nama karyawan.");
-    return;
-  }
-
-  localStorage.setItem(KEY_DAFTAR, JSON.stringify(unik));
-  $("infoDaftar").textContent =
-    unik.length + " karyawan tersimpan.";
-  renderStatusHarian();
+function setBusy(value){
+  busy = value;
+  ["loginButton","checkinButton","checkoutButton","logoutButton"]
+    .forEach(id => { if($(id)) $(id).disabled = value; });
 }
-
-function renderStatusHarian(){
-  const tbody = $("statusHarian");
-  tbody.replaceChildren();
-
-  const daftar = bacaDaftarKaryawan();
-  const today = tanggalKey(new Date());
-
-  if(!daftar.length){
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 2;
-    td.textContent = "Belum ada daftar karyawan.";
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-    return;
-  }
-
-  daftar.forEach(nama => {
-    const r = data.find(x =>
-      x.tanggalKey === today &&
-      x.nama.toLocaleLowerCase("id-ID") ===
-        nama.toLocaleLowerCase("id-ID")
-    );
-
-    let status = "BELUM ABSEN";
-    let kelas = "status-merah";
-
-    if(r && !r.keluar){
-      status = "BELUM CHECK-OUT";
-      kelas = "status-kuning";
-    } else if(r && r.keluar){
-      status = "SUDAH ABSEN";
-      kelas = "status-hijau";
-    }
-
-    const tr = document.createElement("tr");
-    const tdNama = document.createElement("td");
-    const tdStatus = document.createElement("td");
-
-    tdNama.textContent = nama;
-    tdStatus.textContent = status;
-    tdStatus.className = kelas;
-
-    tr.append(tdNama, tdStatus);
-    tbody.appendChild(tr);
-  });
+function showApp(show){
+  $("loginCard").classList.toggle("hidden", show);
+  $("appArea").classList.toggle("hidden", !show);
 }
-
-  
-function renderRekapMingguan(){
-  const inputTanggal = $("mingguTanggal");
-  const tbody = $("rekapMingguan");
-  if(!inputTanggal || !tbody) return;
-
-  if(!inputTanggal.value){
-    const sekarang = new Date();
-    inputTanggal.value =
-      sekarang.getFullYear() + "-" +
-      pad(sekarang.getMonth()+1) + "-" +
-      pad(sekarang.getDate());
-  }
-
-  const tanggalDipilih =
-    new Date(inputTanggal.value + "T12:00:00");
-
-  if(Number.isNaN(tanggalDipilih.getTime())) return;
-
-  const senin = new Date(tanggalDipilih);
-  senin.setDate(
-    senin.getDate() - ((senin.getDay()+6)%7)
-  );
-
-  const minggu = new Date(senin);
-  minggu.setDate(minggu.getDate()+6);
-
-  const keyMulai = tanggalKey(senin);
-  const keyAkhir = tanggalKey(minggu);
-
-  $("periodeMinggu").textContent =
-    "Periode: " + tanggal(senin) +
-    " sampai " + tanggal(minggu);
-
-  const daftarNama = bacaDaftarKaryawan();
-  const semuaNama = [
-    ...new Map(
-      [...daftarNama, ...data.map(r => r.nama)]
-        .map(n => [n.toLocaleLowerCase("id-ID"), n])
-    ).values()
-  ];
-
-  const pencarian = $("cariRekap").value
-    .trim().toLocaleLowerCase("id-ID");
-
-  const namaTampil = semuaNama.filter(n =>
-    n.toLocaleLowerCase("id-ID").includes(pencarian)
-  );
-
-  tbody.replaceChildren();
-
-  if(!namaTampil.length){
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 10;
-    td.textContent = "Belum ada data karyawan.";
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-    return;
-  }
-
-  namaTampil.forEach(nama => {
-    const rekapHari = Array(7).fill(0);
-    let totalKerja = 0;
-
-    data.forEach(r => {
-      if(
-        r.nama.toLocaleLowerCase("id-ID") !==
-          nama.toLocaleLowerCase("id-ID") ||
-        r.tanggalKey < keyMulai ||
-        r.tanggalKey > keyAkhir ||
-        !r.keluar
-      ) return;
-
-      const waktuMasuk = new Date(r.masuk);
-      const indeksHari = (waktuMasuk.getDay()+6)%7;
-      const jamKerja = durasi(r.masuk, r.keluar);
-      const jamLembur = Math.max(0, jamKerja-12);
-
-      rekapHari[indeksHari] += jamLembur;
-      totalKerja += jamKerja;
-    });
-
-    const totalLembur = rekapHari.reduce(
-      (jumlah, jam) => jumlah + jam, 0
-    );
-
-    const tr = document.createElement("tr");
-
-    const nilai = [
-      nama,
-      ...rekapHari.map(formatJam),
-      formatJam(totalKerja),
-      formatJam(totalLembur)
-    ];
-
-    nilai.forEach((teks, indeks) => {
-      const td = document.createElement("td");
-      td.textContent = teks;
-
-      if(indeks === 9){
-        td.className = "overtime";
-      }
-
-      tr.appendChild(td);
-    });
-
-    tbody.appendChild(tr);
-  });
-}
-
-$("mingguTanggal").addEventListener(
-  "change", renderRekapMingguan
-);
-
-$("cariRekap").addEventListener(
-  "input", renderRekapMingguan
-);
-
-$("unduhRekap").onclick = () => {
-  const tabel = $("rekapMingguan");
-  if(!tabel.rows.length){
-    alert("Tidak ada data rekap untuk diekspor.");
-    return;
-  }
-
-  const header = [
-    "Nama Karyawan", "Senin", "Selasa", "Rabu",
-    "Kamis", "Jumat", "Sabtu", "Minggu",
-    "Total Jam Kerja", "Total Lembur"
-  ];
-
-  const rows = [header];
-
-  [...tabel.rows].forEach(tr => {
-    rows.push([...tr.cells].map(td => td.textContent));
-  });
-
-  const csv = rows.map(row =>
-    row.map(v => '"' + v.replace(/"/g, '""') + '"').join(",")
-  ).join("\r\n");
-
-  const blob = new Blob(["\ufeff" + csv], {
-    type: "text/csv;charset=utf-8"
-  });
-
+function csvDownload(filename, rows){
+  const csv = rows.map(row => row.map(escapeCSV).join(",")).join("\r\n");
+  const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "rekap-lembur-mingguan.csv";
+  a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-};
-$("simpanDaftar").onclick = simpanDaftarKaryawan;
-
-const daftarTersimpan = bacaDaftarKaryawan();
-$("daftarNama").value = daftarTersimpan.join("\n");
-if(daftarTersimpan.length){
-  $("infoDaftar").textContent =
-    daftarTersimpan.length + " karyawan tersimpan.";
 }
 
-const renderAwal = render;
-render = function(){
-  renderAwal();
-  renderStatusHarian();
-  renderRekapMingguan();
+$("loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if(busy) return;
+  setBusy(true);
+  say("Sedang login...", "loginMessage");
+  try{
+    await signInWithEmailAndPassword(
+      auth, $("email").value.trim(), $("password").value
+    );
+    $("password").value = "";
+    say("", "loginMessage");
+  }catch(err){
+    say("Login gagal. Periksa email, kata sandi, dan status akun. ("+
+      err.code+")", "loginMessage");
+  }finally{
+    setBusy(false);
+  }
+});
+
+$("logoutButton").onclick = async () => {
+  try{ await signOut(auth); }
+  catch(err){ say("Gagal logout: "+err.message); }
 };
-render();
+
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  role = null;
+  profile = null;
+  attendance = [];
+  employees = [];
+
+  if(!user){
+    showApp(false);
+    say("", "loginMessage");
+    return;
+  }
+
+  showApp(true);
+  say("Memeriksa hak akses...");
+  try{
+    const adminSnap = await getDoc(doc(db, "admins", user.uid));
+
+    if(adminSnap.exists()){
+      role = "admin";
+      profile = {nama: user.email || "Admin"};
+    }else{
+      const employeeSnap = await getDoc(doc(db, "employees", user.uid));
+      if(!employeeSnap.exists()){
+        await signOut(auth);
+        say("Akun belum terdaftar sebagai admin atau karyawan. Hubungi admin.",
+          "loginMessage");
+        return;
+      }
+      role = "employee";
+      profile = employeeSnap.data();
+      profile.nama = profile.nama || user.email || "Karyawan";
+    }
+
+    $("welcome").textContent = "Halo, " + profile.nama;
+    $("roleInfo").textContent =
+      role === "admin" ? "Akses: Admin / Atasan" : "Akses: Karyawan";
+    $("employeeCheckin").classList.toggle("hidden", role !== "employee");
+    $("employeeListCard").classList.toggle("hidden", role !== "admin");
+    $("weeklyCard").classList.toggle("hidden", role !== "admin");
+    $("deleteOldButton").classList.toggle("hidden", role !== "admin");
+
+    if(!$("weekDate").value) $("weekDate").value = dateKey(new Date());
+    await refreshData();
+    say("Berhasil login. Data dimuat dari Firebase.");
+  }catch(err){
+    say("Gagal memuat profil atau data. Periksa dokumen UID dan aturan Firestore. ("+
+      err.code+")");
+  }
+});
+
+async function refreshData(){
+  if(!currentUser || !role) return;
+
+  if(role === "admin"){
+    const [attendanceSnap, employeeSnap] = await Promise.all([
+      getDocs(collection(db, "attendance")),
+      getDocs(collection(db, "employees"))
+    ]);
+    attendance = attendanceSnap.docs.map(d => ({id:d.id, ...d.data()}));
+    employees = employeeSnap.docs.map(d => ({uid:d.id, ...d.data()}));
+  }else{
+    const q = query(
+      collection(db, "attendance"),
+      where("uid", "==", currentUser.uid)
+    );
+    const snap = await getDocs(q);
+    attendance = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    employees = [];
+  }
+
+  attendance.sort((a,b) => new Date(b.masuk)-new Date(a.masuk));
+  renderAll();
+}
+
+function renderAll(){
+  renderSummary();
+  renderHistory();
+  if(role === "admin"){
+    renderEmployeeStatus();
+    renderWeekly();
+  }
+}
+
+function renderSummary(){
+  const today = dateKey(new Date());
+  const todayRecords = attendance.filter(r => r.tanggalKey === today);
+  const finished = todayRecords.filter(r => r.keluar);
+  const totalHours = finished.reduce(
+    (sum,r) => sum + hoursBetween(r.masuk,r.keluar), 0
+  );
+  const totalOT = finished.reduce((sum,r) => sum + overtimeOf(r), 0);
+
+  $("todayDate").textContent =
+    dayName(new Date()) + ", " + dateText(new Date());
+  $("peopleCount").textContent = role === "admin"
+    ? new Set(todayRecords.map(r => r.uid)).size
+    : (todayRecords.length ? "1" : "0");
+  $("workTotal").textContent = formatHours(totalHours);
+  $("overtimeTotal").textContent = formatHours(totalOT);
+}
+
+function renderHistory(){
+  const q = $("searchHistory").value.trim().toLocaleLowerCase("id-ID");
+  const list = attendance.filter(r =>
+    String(r.nama || "").toLocaleLowerCase("id-ID").includes(q)
+  );
+  const tbody = $("historyTable");
+  tbody.replaceChildren();
+  $("historyEmpty").style.display = list.length ? "none" : "block";
+
+  list.forEach(r => {
+    const h = r.keluar ? hoursBetween(r.masuk,r.keluar) : null;
+    const tr = document.createElement("tr");
+    const vals = [
+      r.nama || "—",
+      dayName(new Date(r.masuk)) + ", " + dateText(new Date(r.masuk)),
+      timeText(r.masuk),
+      timeText(r.keluar),
+      h === null ? "—" : formatHours(h),
+      h === null ? "—" : formatHours(overtimeOf(r)),
+      r.keluar ? "Selesai" : "Sedang bekerja"
+    ];
+    vals.forEach((v,i) => {
+      const td = document.createElement("td");
+      td.textContent = v;
+      if(i === 5) td.className = "overtime";
+      if(i === 6) td.className = r.keluar
+        ? "status-hijau" : "status-kuning";
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function renderEmployeeStatus(){
+  const tbody = $("employeeStatusTable");
+  tbody.replaceChildren();
+  const today = dateKey(new Date());
+
+  employees.sort((a,b) =>
+    String(a.nama || "").localeCompare(String(b.nama || ""), "id")
+  );
+
+  employees.forEach(emp => {
+    const records = attendance.filter(r =>
+      r.uid === emp.uid && r.tanggalKey === today
+    );
+    const open = records.some(r => !r.keluar);
+    let status = "BELUM ABSEN", css = "status-merah";
+    if(open){
+      status = "BELUM CHECK-OUT";
+      css = "status-kuning";
+    }else if(records.length){
+      status = "SUDAH ABSEN";
+      css = "status-hijau";
+    }
+    const tr = document.createElement("tr");
+    const name = document.createElement("td");
+    const state = document.createElement("td");
+    name.textContent = emp.nama || emp.uid;
+    state.textContent = status;
+    state.className = css;
+    tr.append(name,state);
+    tbody.appendChild(tr);
+  });
+}
+
+function getWeekRange(){
+  const d = new Date($("weekDate").value + "T12:00:00");
+  const monday = new Date(d);
+  monday.setDate(monday.getDate() - ((monday.getDay()+6)%7));
+  const sunday = new Date(monday);
+  sunday.setDate(sunday.getDate()+6);
+  return {monday,sunday,start:dateKey(monday),end:dateKey(sunday)};
+}
+
+function weeklyRows(){
+  const range = getWeekRange();
+  const q = $("searchWeekly").value.trim().toLocaleLowerCase("id-ID");
+  $("weekPeriod").textContent =
+    "Periode: " + dateText(range.monday) + " sampai " + dateText(range.sunday);
+
+  const names = employees.filter(emp =>
+    String(emp.nama || "").toLocaleLowerCase("id-ID").includes(q)
+  );
+  return names.map(emp => {
+    const days = Array(7).fill(0);
+    let totalWork = 0;
+    attendance.forEach(r => {
+      if(r.uid !== emp.uid || !r.keluar ||
+         r.tanggalKey < range.start || r.tanggalKey > range.end) return;
+      const index = (new Date(r.masuk).getDay()+6)%7;
+      const h = hoursBetween(r.masuk,r.keluar);
+      days[index] += Math.max(0,h-12);
+      totalWork += h;
+    });
+    return {
+      nama: emp.nama || emp.uid,
+      days,
+      totalWork,
+      totalOT: days.reduce((s,n)=>s+n,0)
+    };
+  });
+}
+
+function renderWeekly(){
+  const tbody = $("weeklyTable");
+  tbody.replaceChildren();
+  if(!$("weekDate").value) $("weekDate").value = dateKey(new Date());
+
+  weeklyRows().forEach(r => {
+    const tr = document.createElement("tr");
+    const values = [
+      r.nama, ...r.days.map(formatHours),
+      formatHours(r.totalWork), formatHours(r.totalOT)
+    ];
+    values.forEach((v,i) => {
+      const td = document.createElement("td");
+      td.textContent = v;
+      if(i === 9) td.className = "overtime";
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+$("checkinButton").onclick = async () => {
+  if(busy || role !== "employee") return;
+  setBusy(true);
+  try{
+    await refreshData();
+    if(attendance.some(r => r.uid === currentUser.uid && !r.keluar)){
+      say("Kamu masih memiliki absensi aktif. Lakukan check-out dahulu.");
+      return;
+    }
+    const now = new Date();
+    await addDoc(collection(db,"attendance"), {
+      uid: currentUser.uid,
+      nama: profile.nama,
+      bagian: $("bagian").value.trim(),
+      masuk: now.toISOString(),
+      keluar: null,
+      tanggalKey: dateKey(now)
+    });
+    await refreshData();
+    say("Check-in berhasil pukul " + timeText(now.toISOString()) + ".");
+  }catch(err){
+    say("Check-in gagal. Periksa koneksi dan aturan Firestore. ("+err.code+")");
+  }finally{
+    setBusy(false);
+  }
+};
+
+$("checkoutButton").onclick = async () => {
+  if(busy || role !== "employee") return;
+  setBusy(true);
+  try{
+    await refreshData();
+    const r = attendance.find(x => x.uid === currentUser.uid && !x.keluar);
+    if(!r){
+      say("Tidak ada check-in aktif. Silakan check-in terlebih dahulu.");
+      return;
+    }
+    const now = new Date();
+    if(now < new Date(r.masuk)){
+      say("Waktu check-out tidak valid. Periksa jam perangkat.");
+      return;
+    }
+    await updateDoc(doc(db,"attendance",r.id), {
+      keluar: now.toISOString()
+    });
+    await refreshData();
+    const h = hoursBetween(r.masuk,now.toISOString());
+    say("Check-out berhasil. Total kerja " + formatHours(h) +
+      ", lembur " + formatHours(Math.max(0,h-12)) + ".");
+  }catch(err){
+    say("Check-out gagal. Periksa koneksi dan aturan Firestore. ("+err.code+")");
+  }finally{
+    setBusy(false);
+  }
+};
+
+$("searchHistory").addEventListener("input", renderHistory);
+$("weekDate").addEventListener("change", () => {
+  if(role === "admin") renderWeekly();
+});
+$("searchWeekly").addEventListener("input", () => {
+  if(role === "admin") renderWeekly();
+});
+
+$("exportHistory").onclick = () => {
+  const rows = [[
+    "Nama","UID","Bagian","Hari","Tanggal",
+    "Check-in","Check-out","Total Jam","Lembur","Status"
+  ]];
+  const q = $("searchHistory").value.trim().toLocaleLowerCase("id-ID");
+  attendance.filter(r =>
+    String(r.nama || "").toLocaleLowerCase("id-ID").includes(q)
+  ).forEach(r => {
+    const h = r.keluar ? hoursBetween(r.masuk,r.keluar) : null;
+    rows.push([
+      r.nama,r.uid,r.bagian || "",dayName(new Date(r.masuk)),
+      dateText(new Date(r.masuk)),timeText(r.masuk),timeText(r.keluar),
+      h === null ? "" : formatHours(h),
+      h === null ? "" : formatHours(overtimeOf(r)),
+      r.keluar ? "Selesai" : "Sedang bekerja"
+    ]);
+  });
+  csvDownload("riwayat-absensi.csv",rows);
+};
+
+$("exportWeekly").onclick = () => {
+  if(role !== "admin") return;
+  const rows = [[
+    "Nama","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu",
+    "Total Jam Kerja","Total Lembur"
+  ]];
+  weeklyRows().forEach(r => rows.push([
+    r.nama,...r.days.map(formatHours),
+    formatHours(r.totalWork),formatHours(r.totalOT)
+  ]));
+  csvDownload("rekap-lembur-mingguan.csv",rows);
+};
+
+$("deleteOldButton").onclick = async () => {
+  if(role !== "admin" || busy) return;
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth()-1);
+  const old = attendance.filter(r => new Date(r.masuk) < cutoff);
+  if(!old.length){
+    alert("Tidak ada data yang lebih lama dari 1 bulan.");
+    return;
+  }
+  if(!confirm("Hapus "+old.length+
+    " catatan absensi yang lebih lama dari 1 bulan secara permanen?")) return;
+
+  setBusy(true);
+  try{
+    for(let i=0;i<old.length;i+=400){
+      await Promise.all(old.slice(i,i+400).map(r =>
+        deleteDoc(doc(db,"attendance",r.id))
+      ));
+    }
+    await refreshData();
+    alert(old.length+" catatan berhasil dihapus.");
+  }catch(err){
+    say("Sebagian data mungkin belum terhapus. Periksa koneksi. ("+err.code+")");
+  }finally{
+    setBusy(false);
+  }
+};
 </script>
 </body>
 </html>
