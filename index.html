@@ -48,6 +48,33 @@ th{background:#edf3f8}
  .stat:last-child{grid-column:span 2}
  .actions{flex-direction:column}
 }
+ .brand-logos {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.brand-logos img {
+  width: 120px;
+  height: 75px;
+  object-fit: contain;
+  background: white;
+  padding: 5px;
+  border-radius: 6px;
+}
+
+@media (max-width: 500px) {
+  .brand-logos {
+    gap: 12px;
+  }
+
+  .brand-logos img {
+    width: 42%;
+    height: 65px;
+  }
+}
 </style>
 </head>
 <body>
